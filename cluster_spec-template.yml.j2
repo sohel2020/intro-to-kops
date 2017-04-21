@@ -1,31 +1,31 @@
 apiVersion: kops/v1alpha2
 kind: Cluster
 metadata:
-  name: intro.dev.example.com
+  name: {{ cluster_name }}
 spec:
   api:
     loadBalancer:
       type: Public
   channel: stable
   cloudProvider: aws
-  configBase: s3://kops-state-store/intro.dev.example.com
-  dnsZone: intro.dev.example.com
+  configBase: {{ kops_state_store }}/{{ cluster_name }}
+  dnsZone: {{ dns_zone }}
   etcdClusters:
   - etcdMembers:
-    - instanceGroup: master-us-east-2a
+    - instanceGroup: master-{{ master_zone_1 }}
       name: a
     name: main
   - etcdMembers:
-    - instanceGroup: master-us-east-2a
+    - instanceGroup: master-{{ master_zone_1 }}
       name: a
     name: events
   kubernetesApiAccess:
   - 0.0.0.0/0
   kubernetesVersion: 1.5.6
-  masterInternalName: api.internal.dev.example.com
-  masterPublicName: api.dev.example.com
-  networkCIDR: 172.20.0.0/16
-  networkID: vpc-placeholder
+  masterInternalName: api.internal.{{ cluster_name }}
+  masterPublicName: api.{{ cluster_name }}
+  networkCIDR: {{ network_cidr }}
+  networkID: {{ aws_vpc_id }}
   networking:
     weave: {}
   nonMasqueradeCIDR: 100.64.0.0/10
@@ -33,32 +33,32 @@ spec:
   - 0.0.0.0/0
   subnets:
   - cidr: 172.20.16.0/24
-    egress: nat-placeholder
-    name: us-east-2a
+    egress: {{ nat_gateway_1_id }}
+    name: {{ zone_1 }}
     type: Private
-    zone: us-east-2a
+    zone: {{ zone_1 }}
   - cidr: 172.20.17.0/24
-    egress: nat-placeholder
-    name: us-east-2b
+    egress: {{ nat_gateway_2_id }}
+    name: {{ zone_2 }}
     type: Private
-    zone: us-east-2b
+    zone: {{ zone_2 }}
   - cidr: 172.20.18.0/24
-    egress: nat-placeholder
-    name: us-east-2c
+    egress: {{ nat_gateway_3_id }}
+    name: {{ zone_3 }}
     type: Private
-    zone: us-east-2c
+    zone: {{ zone_3 }}
   - cidr: 172.20.20.0/24
-    name: utility-us-east-2a
+    name: utility-{{ zone_1 }}
     type: Utility
-    zone: us-east-2a
+    zone: {{ zone_1 }}
   - cidr: 172.20.21.0/24
-    name: utility-us-east-2b
+    name: utility-{{ zone_2 }}
     type: Utility
-    zone: us-east-2b
+    zone: {{ zone_2 }}
   - cidr: 172.20.22.0/24
-    name: utility-us-east-2c
+    name: utility-{{ zone_3 }}
     type: Utility
-    zone: us-east-2c
+    zone: {{ zone_3 }}
   topology:
     dns:
       type: Public
@@ -69,8 +69,8 @@ apiVersion: kops/v1alpha2
 kind: InstanceGroup
 metadata:
   labels:
-    kops.k8s.io/cluster: intro.dev.example.com
-  name: master-us-east-2a
+    kops.k8s.io/cluster: {{ cluster_name }}
+  name: master-{{ master_zone_1 }}
 spec:
   image: kope.io/k8s-1.5-debian-jessie-amd64-hvm-ebs-2017-01-09
   machineType: t2.medium
@@ -78,13 +78,13 @@ spec:
   minSize: 1
   role: Master
   subnets:
-  - us-east-2a
+  - {{ master_zone_1 }}
 ---
 apiVersion: kops/v1alpha2
 kind: InstanceGroup
 metadata:
   labels:
-    kops.k8s.io/cluster: intro.dev.example.com
+    kops.k8s.io/cluster: {{ cluster_name }}
   name: nodes
 spec:
   image: kope.io/k8s-1.5-debian-jessie-amd64-hvm-ebs-2017-01-09
@@ -92,7 +92,4 @@ spec:
   maxSize: 3
   minSize: 3
   role: Node
-  subnets:
-  - us-east-2a
-  - us-east-2b
-  - us-east-2c
+  subnets: {{ node_zones | to_yaml}}
